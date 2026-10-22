@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use EPI-Maching-Learning, please cite it as below."
+title: "EPI-Maching-Learning: browser-based machine-learning prediction analysis with Super Learner, cross-validation and interpretation"
+type: software
+authors:
+  - family-names: "Fernández-Guzmán"
+    given-names: "Daniel"
+version: "2026.10.22"
+date-released: "2026-10-22"
+license: CC-BY-NC-ND-4.0
+repository-code: "https://github.com/Danielferguz/EPI-Maching-Learning"
+url: "https://danielferguz.github.io/EPI-Maching-Learning/"
+keywords:
+  - machine learning
+  - Super Learner
+  - cross-validation
+  - prediction
+  - epidemiology

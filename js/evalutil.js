@@ -1,0 +1,13 @@
+// Utilidades de evaluación de predicciones (calibración, curva de decisión).
+import { fitGLM } from './models.js?v=2026.10.22-1';
+export const wilson = (k, n, z = 1.96) => { const p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)); return [(c - h) / d, (c + h) / d]; };
+export function calibGroups(p, y, g = 10) { const idx = Array.from(p.keys()).sort((a, b) => p[a] - p[b]), n = idx.length, rows = []; for (let k = 0; k < g; k++) { const s = idx.slice(Math.floor(k * n / g), Math.floor((k + 1) * n / g)); if (!s.length) continue; const ev = s.reduce((a, i) => a + y[i], 0), [lo, hi] = wilson(ev, s.length); rows.push({ pred: s.reduce((a, i) => a + p[i], 0) / s.length, obs: ev / s.length, lo, hi, n: s.length }); } return rows; }
+export function lowess(x, y, f = 2 / 3, npts = 60) {
+  const idx = Array.from(x.keys()).sort((a, b) => x[a] - x[b]), xs = idx.map(i => x[i]), ys = idx.map(i => y[i]), n = xs.length; if (n < 5) return [];
+  const r = Math.max(3, Math.ceil(f * n)), out = [];
+  for (let k = 0; k < npts; k++) { const x0 = xs[0] + (xs[n - 1] - xs[0]) * k / (npts - 1), d = xs.map(v => Math.abs(v - x0)), h = [...d].sort((a, b) => a - b)[r - 1] || 1e-12; let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0; for (let i = 0; i < n; i++) { const u = d[i] / h; if (u >= 1) continue; const w = (1 - u ** 3) ** 3; sw += w; sx += w * xs[i]; sy += w * ys[i]; sxx += w * xs[i] ** 2; sxy += w * xs[i] * ys[i]; } const den = sw * sxx - sx * sx, b = Math.abs(den) > 1e-12 ? (sw * sxy - sx * sy) / den : 0, a = (sy - b * sx) / sw; out.push([x0, a + b * x0]); }
+  return out;
+}
+export function calibSlope(p, y) { const lp = Array.from(p, v => Math.log(Math.min(1 - 1e-9, Math.max(1e-9, v)) / (1 - Math.min(1 - 1e-9, Math.max(1e-9, v))))); try { const f = fitGLM(lp.map(v => Float64Array.of(1, v)), y, 'binomial'); return { slope: f.beta[1], se: f.se[1], intercept: f.beta[0] }; } catch { return { slope: NaN, se: NaN }; } }
+export function dcaBinary(p, y, th) { const n = y.length, prev = y.reduce((a, b) => a + b, 0) / n; return th.map(pt => { let tp = 0, fp = 0; for (let i = 0; i < n; i++) if (p[i] >= pt) { if (y[i]) tp++; else fp++; } const w = pt / (1 - pt), nb = tp / n - fp / n * w, all = prev - (1 - prev) * w; return { pt, model: nb, all, none: 0, avoid: (nb - all) / w * 100 }; }); }
+export const rocPts = (score, y) => { const idx = Array.from(score.keys()).sort((a, b) => score[b] - score[a]), n1 = y.reduce((a, b) => a + b, 0), n0 = y.length - n1, pts = [[0, 0]]; let tp = 0, fp = 0; for (let k = 0; k < idx.length; k++) { if (y[idx[k]]) tp++; else fp++; if (k === idx.length - 1 || score[idx[k + 1]] !== score[idx[k]]) pts.push([fp / n0, tp / n1]); } return pts; };

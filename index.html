@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EPI-Maching-Learning</title>
+<meta name="description" content="EPI-Maching-Learning (EPI-LAB): análisis de predicción con aprendizaje automático en el navegador. Regresión penalizada, árboles, bosques aleatorios, boosting, redes neuronales y Super Learner con validación cruzada, importancia de variables y dependencia parcial.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css?v=2026.10.22-1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 46 40" aria-hidden="true"><rect x="2" y="16" width="4" height="22" rx="1" fill="#4D4D4D"/><rect x="9" y="12" width="4" height="26" rx="1" fill="#4D4D4D"/><rect x="16" y="9" width="4" height="29" rx="1" fill="#5BA7B8"/><rect x="23" y="22" width="4" height="16" rx="1" fill="#5BA7B8"/><rect x="30" y="28" width="4" height="10" rx="1" fill="#4D4D4D"/><path d="M8 4 C20 4 22 18 28 22 S38 30 42 28" fill="none" stroke="#4D4D4D" stroke-width="1.6"/><circle cx="8" cy="5" r="4" fill="#8B2E3B"/><circle cx="28" cy="21" r="3" fill="#4D4D4D"/><circle cx="42" cy="28" r="3" fill="#5BA7B8"/></svg>
+    <div><h1><span class="epi">EPI</span><span class="data">-ML</span></h1><p>Un módulo de <b>EPI-LAB</b> · Predicción con aprendizaje automático</p></div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="conceptos" class="active"><span class="n">1</span>Conceptos</button>
+    <button role="tab" data-tab="datos"><span class="n">2</span>Datos</button>
+    <button role="tab" data-tab="pregunta"><span class="n">3</span>Pregunta</button>
+    <button role="tab" data-tab="algoritmos"><span class="n">4</span>Algoritmos y validación</button>
+    <button role="tab" data-tab="resultados"><span class="n">5</span>Resultados</button>
+    <button role="tab" data-tab="interpretacion"><span class="n">6</span>Interpretación</button>
+    <button role="tab" data-tab="reporte"><span class="n">7</span>Reporte</button>
+    <button role="tab" data-tab="ayuda"><span class="n">?</span>Ayuda</button>
+  </nav>
+</header>
+<main>
+<section id="tab-conceptos" class="tab active"><div id="concepts"></div></section>
+
+<section id="tab-datos" class="tab">
+  <div class="card">
+    <h2>Cargar la base de datos</h2>
+    <div class="howto"><div><b>Qué se hace</b>Se lee su CSV o Excel: una fila por paciente, una columna por variable, con el desenlace que se quiere predecir.</div><div><b>Para qué</b>Los datos se quedan en su navegador. Los algoritmos aprenden de estas filas y se evalúan con validación cruzada.</div><div><b>Consejo</b>Excluya identificadores y variables que contengan el resultado (p. ej., fecha de muerte para predecir muerte).</div></div>
+    <div class="drop" id="drop"><input type="file" id="file" accept=".csv,.txt,.tsv,.xlsx,.xls"><label for="file"><b>Elegir archivo</b> o arrastrarlo aquí</label></div>
+    <h3>O pruebe con un ejemplo</h3><div class="examples" id="examples"></div><div id="load-msg"></div>
+  </div>
+  <div class="card has-data" hidden><div class="row between wrap gap"><h2>Variables</h2><label class="inline">Códigos de dato perdido <input id="na-codes" value="NA, ., -, 999, 9999" size="20"></label></div><div class="tablewrap tall"><table class="data" id="vartable"></table></div><div class="stepnav"><span></span><button class="primary" data-go="pregunta">Siguiente: la pregunta →</button></div></div>
+</section>
+
+<section id="tab-pregunta" class="tab">
+  <div class="card need-data"><p class="muted">Primero cargue una base de datos en el paso 2.</p></div>
+  <div class="card has-data" hidden>
+    <h2>¿Qué se quiere predecir y con qué?</h2>
+    <div class="howto"><div><b>Qué se hace</b>Se elige el desenlace (Sí/No o numérico) y los predictores. Las variables categóricas se codifican en indicadores (dummies); los datos perdidos se imputan con la mediana/moda <i>dentro de cada pliegue</i>.</div><div><b>Para qué</b>Una predicción no es una explicación: aquí no interesa el efecto causal de cada variable sino predecir bien en pacientes nuevos.</div><div><b>Cómo decidir</b>Incluya predictores disponibles <i>en el momento de predecir</i>. Con pocos eventos por variable los algoritmos flexibles se sobreajustan (necesitan muchos más datos que la regresión).</div></div>
+    <div class="form"><label>Desenlace <select id="q-y"></select></label><label id="q-ev-w">Categoría que es el evento <select id="q-ev"></select></label><label>Tipo de problema <input id="q-fam" readonly></label></div>
+    <h3>Predictores</h3><div id="q-vars" class="predvars"></div><div class="row gap wrap mt"><button class="ghost sm" id="q-all">Marcar todos</button><button class="ghost sm" id="q-none">Ninguno</button><span id="q-info" class="sub"></span></div>
+    <div id="q-warn"></div>
+    <div class="stepnav"><button class="ghost" data-go="datos">← Datos</button><button class="primary" data-go="algoritmos">Siguiente: algoritmos →</button></div>
+  </div>
+</section>
+
+<section id="tab-algoritmos" class="tab">
+  <div class="card need-data"><p class="muted">Primero cargue una base de datos en el paso 2.</p></div>
+  <div class="card has-data" hidden>
+    <h2>Biblioteca de algoritmos</h2>
+    <div class="howto"><div><b>Qué se hace</b>Se eligen los algoritmos que competirán y se ajustan sus hiperparámetros. Puede añadir variantes (p. ej., bosques con distinto <code>mtry</code>).</div><div><b>Para qué</b>No existe un algoritmo mejor en general. El <b>Super Learner</b> los evalúa a todos con validación cruzada y los combina con el peso óptimo, de modo que rinde casi tanto como el mejor candidato.</div><div><b>Recomendación</b>Incluya siempre una referencia simple (media y regresión logística/lineal). Los algoritmos flexibles solo justifican su complejidad si superan a la regresión.</div></div>
+    <div class="row gap wrap"><button class="ghost sm" data-preset="fast">Preset rápido</button><button class="ghost sm" data-preset="full">Preset completo</button><button class="ghost sm" data-preset="simple">Solo regresiones</button></div>
+    <div id="lib" class="mt"></div>
+  </div>
+  <div class="card has-data" hidden>
+    <h2>Esquema de validación</h2>
+    <div class="howto"><div><b>Validación cruzada</b>Los datos se dividen en V pliegues; cada pliegue se predice con modelos entrenados con los demás. Todas las observaciones se usan para entrenar y para evaluar, sin que un paciente se prediga con un modelo que lo vio.</div><div><b>Hold-out</b>Se reserva una fracción como conjunto de prueba, que se toca una sola vez al final. Es menos eficiente, pero da una evaluación independiente del conjunto completo.</div><div><b>Super Learner anidado</b>Evaluar el Super Learner con las mismas predicciones que eligieron sus pesos es optimista; la validación cruzada anidada da el rendimiento honesto (tarda ~V veces más).</div></div>
+    <div class="form"><label>Esquema <select id="v-type"><option value="cv">Validación cruzada V pliegues</option><option value="holdout">Entrenamiento / prueba (hold-out)</option></select></label><label>Pliegues (V) <input id="v-V" type="number" min="3" max="20" value="5"></label><label class="cvonly">Repeticiones de la validación cruzada <input id="v-rep" type="number" min="1" max="10" value="1"></label><label class="hoonly">Fracción de prueba <input id="v-test" type="number" step="0.05" min="0.1" max="0.5" value="0.25"></label><label>Pesos del Super Learner <select id="v-method"><option value="nnls">Mínimos cuadrados no negativos (NNLS)</option><option value="loglik" class="binonly">Log-verosimilitud binomial (solo binario)</option></select></label><label>Semilla <input id="v-seed" type="number" value="2024"></label><label class="inline wide"><input type="checkbox" id="v-cvsl" checked> Evaluar el Super Learner con validación cruzada anidada (rendimiento honesto)</label><label class="cvonly">Pliegues externos / internos <span class="row gap"><input id="v-vo" type="number" min="3" max="10" value="5" style="width:70px"><input id="v-vi" type="number" min="3" max="10" value="5" style="width:70px"></span></label></div>
+    <div id="v-est" class="explain"></div>
+    <div class="row gap mt wrap"><button class="primary" id="run">Entrenar y comparar</button><progress id="prog" max="1" value="0" hidden></progress><span id="run-msg" class="muted"></span></div>
+  </div>
+</section>
+
+<section id="tab-resultados" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="res-out"></div></section>
+<section id="tab-interpretacion" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="int-out"></div></section>
+<section id="tab-reporte" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="rep-out"></div>
+  <div class="card"><h2>Formato de figuras</h2><p class="sub">Se aplica a las descargas SVG/PNG/TIFF.</p><div class="form"><label>Ancho <select id="fig-width"><option value="single">1 columna (85 mm)</option><option value="onehalf">1,5 columnas (120 mm)</option><option value="double" selected>2 columnas (174 mm)</option><option value="custom">Personalizado</option></select></label><label>Ancho personalizado (mm) <input id="fig-mm" type="number" value="174"></label><label>Resolución <select id="fig-dpi"><option>300</option><option selected>600</option><option>1200</option></select></label><label>Fuente <select id="fig-font"><option value="arial">Arial</option><option value="helvetica">Helvetica</option><option value="times">Times New Roman</option></select></label></div></div></section>
+<section id="tab-ayuda" class="tab"><div class="card prose" id="help"></div></section>
+</main>
+<footer class="foot">EPI-Maching-Learning · un módulo de EPI-LAB · © Daniel Fernández-Guzmán · CC BY-NC-ND 4.0 · Los cálculos se realizan en su navegador; ningún dato se envía a servidores. · v2026.10.22-1</footer>
+<script type="module" src="js/app.js?v=2026.10.22-1"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "title": "EPI-Maching-Learning: browser-based machine-learning prediction analysis with Super Learner, cross-validation and interpretation",
+  "upload_type": "software",
+  "description": "Browser tool to compare machine-learning algorithms (penalised regression, k-nearest neighbours, CART, random forest, gradient boosting, neural network) and combine them with the Super Learner using cross-validation, nested cross-validation, permutation importance, partial dependence and decision curves. Algorithms are implemented in JavaScript and validated against scikit-learn and SciPy. All calculations run in the browser.",
+  "creators": [{ "name": "Fernández-Guzmán, Daniel" }],
+  "license": "cc-by-nc-nd-4.0",
+  "access_right": "open",
+  "keywords": ["machine learning", "Super Learner", "cross-validation", "prediction", "epidemiology"]
+}
