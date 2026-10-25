@@ -1,5 +1,5 @@
 // Calculadora de riesgo descargable: serializa el Super Learner final y genera una página HTML autónoma (sin conexión, sin datos de pacientes).
-import { fitImputer } from './learners.js?v=2026.10.25-4';
+import { fitImputer } from './learners.js?v=2026.10.25-5';
 
 const rnd = (a, d = 6) => Array.from(a, v => +Number(v).toPrecision(d));
 const tree = t => ({ f: Array.from(t.feat), t: rnd(t.thr, 6), l: Array.from(t.left), r: Array.from(t.right), v: rnd(t.val, 5) });

@@ -1,6 +1,6 @@
 // Borrador de manuscrito (ES/EN, estilo revista) con los resultados de la comparación de algoritmos y del Super Learner.
-import { svgToPngDataURL } from './figs.js?v=2026.10.25-4';
-import { libraryLabelEn } from './learners.js?v=2026.10.25-4';
+import { svgToPngDataURL } from './figs.js?v=2026.10.25-5';
+import { libraryLabelEn } from './learners.js?v=2026.10.25-5';
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const f2 = (x, d = 3) => (isFinite(x) ? Number(x).toFixed(d) : '–');

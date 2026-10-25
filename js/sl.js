@@ -1,8 +1,8 @@
 // Validación cruzada, métricas, Super Learner (van der Laan, Polley y Hubbard, 2007), Super Learner con validación cruzada anidada,
 // importancia por permutación y dependencia parcial.
-import { fitPipeline, predictPipeline, libraryLabel } from './learners.js?v=2026.10.25-4';
-import { rng } from './dist.js?v=2026.10.25-4';
-import { symInv, mv } from './linalg.js?v=2026.10.25-4';
+import { fitPipeline, predictPipeline, libraryLabel } from './learners.js?v=2026.10.25-5';
+import { rng } from './dist.js?v=2026.10.25-5';
+import { symInv, mv } from './linalg.js?v=2026.10.25-5';
 
 export const tick = () => new Promise(r => setTimeout(r, 0));
 const sum = a => { let s = 0; for (const v of a) s += v; return s; };

@@ -1,20 +1,23 @@
 // EPI-Maching-Learning · interfaz: datos, pregunta, algoritmos y validación, resultados, interpretación y reporte.
-import { readFile, download, toCSV } from './io.js?v=2026.10.25-4';
-import { inferMeta, typedData, NA_DEFAULT, missCount, levelsOf, isMiss } from './data.js?v=2026.10.25-4';
-import { mean, sd } from './tests.js?v=2026.10.25-4';
-import { LEARNERS, defaultLibrary, libraryLabel, libraryLabelEn } from './learners.js?v=2026.10.25-4';
-import { call } from './runner.js?v=2026.10.25-4';
-import { hbarPlot, rocMulti, calibrationPlot, scatterCalib, dcaPlot, pdpPlot } from './mlplots.js?v=2026.10.25-4';
-import { calibGroups, lowess, calibSlope, dcaBinary, rocPts } from './evalutil.js?v=2026.10.25-4';
-import { figWrap, bindFigs } from './figs.js?v=2026.10.25-4';
-import { wordDoc, matrixHTML, matrixCSV, table1, table1HTML } from './report.js?v=2026.10.25-4';
-import { groupColumn, crudeAdjusted, uniAdjTable } from './analysis.js?v=2026.10.25-4';
-import { CONCEPTS_HTML, initLab } from './concepts.js?v=2026.10.25-4';
-import { HELP_HTML } from './help.js?v=2026.10.25-4';
-import { adviseLearners, adviseCV, rileyBinary, ST, HPNOTE } from './advice.js?v=2026.10.25-4';
-import { pythonScript } from './pycode.js?v=2026.10.25-4';
-import { calcHTML, calcPredict } from './calc.js?v=2026.10.25-4';
-import { buildManuscript } from './manuscript.js?v=2026.10.25-4';
+import { readFile, download, toCSV } from './io.js?v=2026.10.25-5';
+import { inferMeta, typedData, NA_DEFAULT, missCount, levelsOf, isMiss } from './data.js?v=2026.10.25-5';
+import { mean, sd } from './tests.js?v=2026.10.25-5';
+import { LEARNERS, defaultLibrary, libraryLabel, libraryLabelEn } from './learners.js?v=2026.10.25-5';
+import { call } from './runner.js?v=2026.10.25-5';
+import { hbarPlot, rocMulti, calibrationPlot, scatterCalib, dcaPlot, pdpPlot } from './mlplots.js?v=2026.10.25-5';
+import { calibGroups, lowess, calibSlope, dcaBinary, rocPts } from './evalutil.js?v=2026.10.25-5';
+import { figWrap, bindFigs } from './figs.js?v=2026.10.25-5';
+import { wordDoc, matrixHTML, matrixCSV, table1, table1HTML } from './report.js?v=2026.10.25-5';
+import { groupColumn, crudeAdjusted, uniAdjTable } from './analysis.js?v=2026.10.25-5';
+import { CONCEPTS_HTML, initLab } from './concepts.js?v=2026.10.25-5';
+import { HELP_HTML } from './help.js?v=2026.10.25-5';
+import { initRoadmap, initStageBar } from './roadmap.js?v=2026.10.25-5';
+import { calibration, fitRecal, applyRecal, cvRecal, pickRecal } from './extval.js?v=2026.10.25-5';
+import { metrics } from './sl.js?v=2026.10.25-5';
+import { adviseLearners, adviseCV, rileyBinary, ST, HPNOTE } from './advice.js?v=2026.10.25-5';
+import { pythonScript } from './pycode.js?v=2026.10.25-5';
+import { calcHTML, calcPredict } from './calc.js?v=2026.10.25-5';
+import { buildManuscript } from './manuscript.js?v=2026.10.25-5';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -36,7 +39,11 @@ const EXAMPLES = [
 const naCodes = () => [...NA_DEFAULT, ...$('#na-codes').value.split(',').map(s => s.trim()).filter(Boolean)];
 
 // ---------------- navegación ----------------
-function showTab(t) { $$('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t)); $$('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + t)); if (t === 'algoritmos') { renderLib(); estimate(); } if (t === 'pregunta') renderQuestion(); window.scrollTo({ top: 0 }); }
+function showTab(t) { $$('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t)); $$('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + t)); if (t === 'algoritmos') { renderLib(); estimate(); } if (t === 'pregunta') renderQuestion(); stageMark?.(t); window.scrollTo({ top: 0 }); }
+let stageMark = null;
+const goTool = (tab, sel) => { showTab(tab); if (sel) setTimeout(() => { const el = $(sel); if (el && !el.closest('[hidden]')) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60); };
+const rm = initRoadmap($('#roadmap'), { app: 'm', go: goTool });
+stageMark = initStageBar($('#stagebar'), st => { showTab('ruta'); rm.show(st); });
 $$('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) showTab(g.dataset.go); });
 const gate = () => { $$('.need-data').forEach(e => (e.hidden = !!state.ds)); $$('.has-data').forEach(e => (e.hidden = !state.ds)); $$('.need-res').forEach(e => (e.hidden = !!state.res)); };
@@ -210,7 +217,47 @@ function renderResults() {
   const hold = R.test ? `<h3>Conjunto de prueba (n = ${R.nTest}) · tocado una sola vez</h3>${table(head.slice(0, bin ? 6 : 4), [...R.labels.map((l, k) => ({ c: metricRow(esc(l), R.test.each[k], fam, null).slice(0, bin ? 6 : 4) })), { c: metricRow('<b>Super Learner</b>', R.test.ens, fam, null).slice(0, bin ? 6 : 4), cls: 'sl' }, { c: metricRow('Super Learner discreto', R.test.disc, fam, null).slice(0, bin ? 6 : 4) }])}` : '';
   const sch_ = R.scheme.type === 'cv' ? `validación cruzada de ${R.scheme.V} pliegues${R.scheme.repeats > 1 ? ` repetida ${R.scheme.repeats} veces` : ''}` : `entrenamiento/prueba (${pct(1 - R.scheme.testFrac)} / ${pct(R.scheme.testFrac)}) con validación cruzada de ${R.scheme.V} pliegues en el entrenamiento`;
   $('#res-out').innerHTML = `<div class="card"><h2>Comparación de algoritmos</h2><div class="howto"><div><b>Qué se ve</b>Rendimiento de cada algoritmo en pacientes que no usó para aprender (${sch_}; n = ${R.n}), y del Super Learner que los combina.</div><div><b>Para qué</b>Elegir el algoritmo (o el conjunto) que mejor predice en datos nuevos y comprobar si la complejidad aporta algo frente a la regresión simple.</div><div><b>Cómo interpretar</b>Diferencias pequeñas (p. ej., AUC &lt; 0.01–0.02) suelen ser ruido. La fila «Super Learner (conjunto)» es optimista porque los pesos se ajustaron con esas mismas predicciones: la fila anidada es la honesta.</div></div>${table(head, body)}<p class="sub">Resaltado: mejor algoritmo individual por ${bin ? 'AUC' : 'RMSE'}. ${bin ? 'Brier escalado = 1 − Brier/(prev·(1−prev)); O/E = observados/esperados.' : ''} Peso: contribución en el Super Learner (${R.method === 'loglik' ? 'máxima verosimilitud binomial' : 'mínimos cuadrados no negativos'}).</p>${hold}${bin ? '<div class="howto"><div><b>Barras por algoritmo</b>El AUC (o RMSE) de cada algoritmo con predicciones fuera de muestra, más el Super Learner.</div><div><b>ROC</b>Sensibilidad frente a 1 − especificidad; más cerca de la esquina superior izquierda = mejor discriminación.</div><div><b>Calibración</b>Riesgo observado frente al predicho: la diagonal es lo ideal; por encima, el modelo subestima; por debajo, sobrestima. Pesos: cuánto aporta cada algoritmo al conjunto.</div></div>' : '<div class="howto"><div><b>Barras por algoritmo</b>El RMSE de cada algoritmo con predicciones fuera de muestra (menor = mejor).</div><div><b>Observado vs predicho</b>Los puntos deberían seguir la diagonal; una curva que se aparta indica sesgo en parte del rango.</div><div><b>Pesos</b>Cuánto aporta cada algoritmo al Super Learner.</div></div>'}<div class="plots">${charts.join('')}</div></div><div class="stepnav"><button class="ghost" data-go="algoritmos">← Algoritmos</button><button class="primary" data-go="interpretacion">Siguiente: interpretación →</button></div>`;
-  bindFigs($('#res-out'));
+  bindFigs($('#res-out')); renderXv();
+}
+
+// ---------------- validación externa y recalibración ----------------
+const xv = { raw: null, name: '' };
+function renderXv() {
+  const R = state.res; if (!R) { $('#xv-out').innerHTML = ''; return; } xv.raw = null;
+  $('#xv-out').innerHTML = `<div class="card" id="xv-card"><h2>Validación externa y recalibración</h2><div class="howto"><div><b>Qué se hace</b>Se aplica el Super Learner ya entrenado (sin reajustarlo) a pacientes de otro centro, otro periodo u otra población, y se mide su discriminación y calibración.</div><div><b>Para qué</b>La validación cruzada solo corrige el sobreajuste; la externa muestra si el modelo se transporta. Si discrimina bien pero se calibra mal, se puede recalibrar (nivel de riesgo y/o escala) en lugar de rehacerlo.</div><div><b>Cómo interpretar</b>Pendiente &lt; 0.9: predicciones demasiado extremas (sobreajuste); intercepto (CITL) ≠ 0 o O/E ≠ 1: el riesgo medio no coincide. La recalibración se compara por validación cruzada dentro de la base de validación.</div></div>
+    <div class="drop slim"><input type="file" id="xv-file" accept=".csv,.txt,.tsv,.xlsx,.xls"><label for="xv-file"><b>Cargar la base de validación (CSV/Excel)</b> con las mismas columnas, o <a href="#" id="xv-ex">usar la validación simulada de ejemplo</a> (solo para el ejemplo «ERC · falla renal a 2 años»)</label></div>
+    <p class="sub" id="xv-info"></p><div class="row gap wrap"><button class="primary" id="xv-run">Evaluar</button><span id="xv-msg" class="muted"></span></div><div id="xv-res"></div></div>`;
+  const load = async file => { try { const { sheets } = await readFile(file), raw = sheets[Object.keys(sheets)[0]]; if (!raw.length) throw new Error('El archivo no tiene filas.'); xv.raw = raw; xv.name = file.name; $('#xv-info').innerHTML = `<span class="pill">✓ ${esc(file.name)}: ${raw.length} filas × ${Object.keys(raw[0]).length} columnas</span>`; } catch (e) { $('#xv-info').innerHTML = errBox(e); } };
+  $('#xv-file').addEventListener('change', e => e.target.files[0] && load(e.target.files[0]));
+  $('#xv-ex').addEventListener('click', async e => { e.preventDefault(); try { await load(new File([await (await fetch('examples/erc_prediccion_validacion.csv')).text()], 'erc_prediccion_validacion.csv')); } catch (err) { $('#xv-info').innerHTML = errBox(err); } });
+  $('#xv-run').addEventListener('click', runXv);
+}
+async function runXv() {
+  const msg = $('#xv-msg'), out = $('#xv-res'); out.innerHTML = ''; msg.textContent = 'Evaluando…';
+  try {
+    const R = state.res, fam = R.spec.fam, bin = fam === 'binary'; if (!xv.raw) throw new Error('Cargue primero la base de validación.');
+    const miss = [...R.spec.vars, R.spec.y].filter(v => !(v in xv.raw[0])); if (miss.length) throw new Error(`La base de validación no contiene: ${miss.join(', ')}.`);
+    const active = Object.fromEntries(Object.entries(state.meta).filter(([k, m]) => m.type !== 'skip' && k in xv.raw[0])), ds = typedData(xv.raw, active, naCodes()), b = buildMatrix(ds, state.meta, R.spec);
+    if (b.y.length < 30) throw new Error('Muy pocos pacientes con desenlace en la base de validación.');
+    if (bin && (b.y.reduce((a, c) => a + c, 0) < 5 || b.y.reduce((a, c) => a + c, 0) > b.y.length - 5)) throw new Error('Se necesitan al menos 5 pacientes con y 5 sin el evento.');
+    const o = await call('predict', { X: b.X }), p = Float64Array.from(o.ens), y = b.y, m = metrics(p, y, fam), c = calibration(p, y, fam), ev = bin ? y.reduce((a, v) => a + v, 0) : null;
+    const devP = R.honest ? R.honest.ensPred : R.ensOOF, devM = R.honest ? R.honest.ens : R.ensCV, devC = calibration(devP, R.y, fam), z = 1.96, ci = (e, se, d = 3) => `${f2(e, d)} (${f2(e - z * se, d)} a ${f2(e + z * se, d)})`;
+    const head = ['Medida', 'Validación externa', 'Desarrollo (validación cruzada)', 'Ideal'];
+    const rows = bin ? [{ c: ['Estadístico C (AUC)', `${f2(m.auc)} (${f2(m.aucLo)} a ${f2(m.aucHi)})`, f2(devM.auc), ''] }, { c: ['Pendiente de calibración', ci(c.slope, c.slopeSE), f2(devC.slope), '1'] }, { c: ['Calibración en general (CITL)', ci(c.citl, c.citlSE), f2(devC.citl), '0'] }, { c: ['Observados/esperados (O/E)', f2(c.oe), f2(devM.oe), '1'] }, { c: ['Brier (escalado)', `${f2(m.brier, 4)} (${f2(m.brierScaled)})`, `${f2(devM.brier, 4)} (${f2(devM.brierScaled)})`, ''] }]
+      : [{ c: ['RMSE', f2(m.rmse), f2(devM.rmse), ''] }, { c: ['MAE', f2(m.mae), f2(devM.mae), ''] }, { c: ['R²', f2(m.r2), f2(devM.r2), '1'] }, { c: ['Pendiente de calibración', ci(c.slope, c.slopeSE), f2(devC.slope), '1'] }, { c: ['CITL (media observada − predicha)', f2(c.citl), f2(devC.citl), '0'] }];
+    const plots = bin ? figWrap(calibrationPlot({ groups: calibGroups(p, y, 10), curve: lowess(p, y, 2 / 3, 40).map(([a, q]) => [a, Math.min(1, Math.max(0, q))]), pred: p, y, title: 'External validation: calibration', note: `Slope ${f2(c.slope, 2)} · CITL ${f2(c.citl, 2)} · O/E ${f2(c.oe, 2)}` }), 'calibracion_validacion_externa') + figWrap(rocMulti([{ label: 'Super Learner', pts: rocPts(p, y), color: '#8B2E3B', bold: true }], 'ROC curve (external validation)'), 'roc_validacion_externa')
+      : figWrap(scatterCalib({ pred: Array.from(p), y: Array.from(y), curve: lowess(p, y, 2 / 3, 40), title: 'External validation: observed vs predicted' }), 'observado_vs_predicho_validacion');
+    const cv = cvRecal(Array.from(p), y, fam), pick = pickRecal(fam, cv), name = { orig: 'Modelo original (sin recalibrar)', citl: 'Recalibración en general (solo intercepto)', slope: 'Recalibración con intercepto y pendiente' };
+    const rh = bin ? ['Estrategia', 'C (AUC)', 'Pendiente', 'CITL', 'O/E', 'Brier'] : ['Estrategia', 'R²', 'Pendiente', 'CITL', 'RMSE'], rr = Object.keys(cv).map(k => ({ cls: k === pick.id ? 'best' : '', c: [name[k], ...(bin ? [f2(cv[k].auc), f2(cv[k].slope), f2(cv[k].citl), f2(cv[k].oe), f2(cv[k].brier, 4)] : [f2(cv[k].r2), f2(cv[k].slope), f2(cv[k].citl), f2(cv[k].rmse)])] }));
+    const rc = fitRecal(p, y, fam, pick.id === 'orig' ? 'slope' : pick.id), eq = bin ? `riesgo recalibrado = expit(${f2(rc.a, 3)} + ${f2(rc.b, 3)} × logit(riesgo del Super Learner))` : `valor recalibrado = ${f2(rc.a, 3)} + ${f2(rc.b, 3)} × valor del Super Learner`;
+    out.innerHTML = `${bin && ev < 100 ? `<p class="warn">La base de validación tiene ${ev} eventos: con menos de ≈ 100 eventos, las medidas de calibración son muy imprecisas.</p>` : ''}<p class="sub">${b.y.length} pacientes${bin ? ` (${ev} eventos)` : ''} de «${esc(xv.name)}».</p>${table(head, rows)}<div class="plots">${plots}</div>
+      <h3>Recalibración</h3><div class="explain">Se ajusta una recta (en la escala logit del riesgo si es binario) entre lo predicho y lo observado: el <b>intercepto</b> corrige el nivel medio del riesgo y la <b>pendiente</b> la dispersión de las predicciones. Rendimiento por validación cruzada (5 pliegues × 3 repeticiones) dentro de la base de validación:</div>${table(rh, rr)}
+      <p><b>Sugerencia:</b> ${esc(name[pick.id])} — ${esc(pick.why)}.${pick.id === 'orig' ? ' El modelo original ya está bien calibrado en este entorno.' : ''}</p><p class="sub">Con todos los pacientes de la validación: ${esc(eq)}. Esta corrección debe validarse en datos independientes; no cambia el orden de los pacientes (el AUC no cambia).</p>
+      <div class="row gap wrap"><button class="ghost" id="xv-dl">Descargar predicciones (original y recalibradas)</button></div>`;
+    bindFigs(out);
+    $('#xv-dl').addEventListener('click', () => { const r1 = fitRecal(p, y, fam, 'citl'), r2 = fitRecal(p, y, fam, 'slope'), a1 = applyRecal(p, r1, fam), a2 = applyRecal(p, r2, fam), cols = ['fila', 'observado', 'predicho', 'recalibrado_intercepto', 'recalibrado_intercepto_pendiente']; download('validacion_externa_predicciones.csv', toCSV(Array.from(p, (v, i) => Object.fromEntries(cols.map((k, j) => [k, [b.rows[i] + 1, y[i], v, a1[i], a2[i]][j]]))), cols), 'text/csv'); });
+    msg.textContent = '';
+  } catch (e) { msg.textContent = ''; out.innerHTML = errBox(e); console.error(e); }
 }
 
 // ---------------- interpretación ----------------

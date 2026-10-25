@@ -7,7 +7,7 @@
 <meta name="description" content="EPI-Maching-Learning (EPI-LAB): análisis de predicción con aprendizaje automático en el navegador. Regresión penalizada, árboles, bosques aleatorios, boosting, redes neuronales y Super Learner con validación cruzada, importancia de variables y dependencia parcial.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/style.css?v=2026.10.25-4">
+<link rel="stylesheet" href="css/style.css?v=2026.10.25-5">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 </head>
 <body>
@@ -17,6 +17,7 @@
     <div><h1><span class="epi">EPI</span><span class="data">-ML</span></h1><p>Un módulo de <b>EPI-LAB</b> · Predicción con aprendizaje automático</p></div>
   </div>
   <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="ruta"><span class="n">⌖</span>Ruta del modelo</button>
     <button role="tab" data-tab="conceptos" class="active"><span class="n">1</span>Conceptos</button>
     <button role="tab" data-tab="datos"><span class="n">2</span>Datos</button>
     <button role="tab" data-tab="pregunta"><span class="n">3</span>Pregunta</button>
@@ -26,6 +27,7 @@
     <button role="tab" data-tab="reporte"><span class="n">7</span>Reporte</button>
     <button role="tab" data-tab="ayuda"><span class="n">?</span>Ayuda</button>
   </nav>
+  <div class="stagebar" id="stagebar"></div>
 </header>
 <main>
 <section id="tab-conceptos" class="tab active"><div id="concepts"></div></section>
@@ -75,13 +77,14 @@
   </div>
 </section>
 
-<section id="tab-resultados" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="res-out"></div></section>
+<section id="tab-resultados" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="res-out"></div><div id="xv-out"></div></section>
+<section id="tab-ruta" class="tab"><div id="roadmap"></div></section>
 <section id="tab-interpretacion" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="int-out"></div></section>
 <section id="tab-reporte" class="tab"><div class="card need-res"><p class="muted">Entrene primero los algoritmos en el paso 4.</p></div><div id="rep-out"></div>
   <div class="card"><h2>Formato de figuras</h2><p class="sub">Se aplica a las descargas SVG/PNG/TIFF.</p><div class="form"><label>Ancho <select id="fig-width"><option value="single">1 columna (85 mm)</option><option value="onehalf">1,5 columnas (120 mm)</option><option value="double" selected>2 columnas (174 mm)</option><option value="custom">Personalizado</option></select></label><label>Ancho personalizado (mm) <input id="fig-mm" type="number" value="174"></label><label>Resolución <select id="fig-dpi"><option>300</option><option selected>600</option><option>1200</option></select></label><label>Fuente <select id="fig-font"><option value="arial">Arial</option><option value="helvetica">Helvetica</option><option value="times">Times New Roman</option></select></label></div></div></section>
 <section id="tab-ayuda" class="tab"><div class="card prose" id="help"></div></section>
 </main>
-<footer class="foot">EPI-Maching-Learning · un módulo de EPI-LAB · © Daniel Fernández-Guzmán · CC BY-NC-ND 4.0 · Los cálculos se realizan en su navegador; ningún dato se envía a servidores. · v2026.10.25-4</footer>
-<script type="module" src="js/app.js?v=2026.10.25-4"></script>
+<footer class="foot">EPI-Maching-Learning · un módulo de EPI-LAB · © Daniel Fernández-Guzmán · CC BY-NC-ND 4.0 · Los cálculos se realizan en su navegador; ningún dato se envía a servidores. · v2026.10.25-5</footer>
+<script type="module" src="js/app.js?v=2026.10.25-5"></script>
 </body>
 </html>

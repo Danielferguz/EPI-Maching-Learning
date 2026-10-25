@@ -1,8 +1,8 @@
 // Motor de ejecución: se usa dentro de un Web Worker (js/worker.js) o, si no hay soporte, en el hilo principal.
-import { cvPredict, superLearner, cvSuperLearner, metrics, makeFolds, permutationImportance, partialDependence, risk } from './sl.js?v=2026.10.25-4';
-import { libraryLabel } from './learners.js?v=2026.10.25-4';
-import { simplify } from './simplify.js?v=2026.10.25-4';
-import { serializeModel } from './calc.js?v=2026.10.25-4';
+import { cvPredict, superLearner, cvSuperLearner, metrics, makeFolds, permutationImportance, partialDependence, risk } from './sl.js?v=2026.10.25-5';
+import { libraryLabel } from './learners.js?v=2026.10.25-5';
+import { simplify } from './simplify.js?v=2026.10.25-5';
+import { serializeModel } from './calc.js?v=2026.10.25-5';
 
 const S = { sl: null, evalX: null, evalY: null, fam: null, Xtr: null, labels: [] };
 const avg = arr => { const o = {}; for (const k of Object.keys(arr[0])) o[k] = arr.reduce((s, m) => s + m[k], 0) / arr.length; return o; };
