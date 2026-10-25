@@ -10,11 +10,13 @@ Todo se calcula en el navegador (Web Worker): los datos no salen de tu computado
 |---|---|
 | 1 · Conceptos | Sobreajuste y sesgo-varianza con un **laboratorio interactivo**, esquemas de validación, fugas de información, tabla de algoritmos, Super Learner y métricas |
 | 2 · Datos | CSV/Excel; ejemplos: **UCI/cateterismo de arteria pulmonar** (mortalidad y estancia), ERC, lesión renal aguda y PHQ-9 |
-| 3 · Pregunta | Desenlace binario o continuo; predictores; codificación en indicadores; advertencias de eventos por variable |
+| 3 · Pregunta | Desenlace binario o continuo; predictores; codificación en indicadores; advertencias de eventos por variable; **tamaño mínimo para regresión (Riley et al.) y semáforo de algoritmos según pacientes, eventos y columnas** |
 | 4 · Algoritmos y validación | Biblioteca con hiperparámetros y variantes: media, regresión logística/lineal, **lasso/ridge/red elástica**, k vecinos, **árbol CART**, **bosque aleatorio**, **boosting de gradiente**, red neuronal; validación cruzada (repetida) u hold-out; pesos NNLS o log-verosimilitud |
 | 5 · Resultados | Tabla comparativa (AUC con IC, Brier, log-loss, O/E, RMSE, R²…), pesos del **Super Learner**, **Super Learner con validación cruzada anidada** (rendimiento honesto), ROC, calibración, observado vs predicho |
-| 6 · Interpretación | Importancia por permutación, **dependencia parcial + ICE**, curva de decisión, predicción en pacientes nuevos |
-| 7 · Reporte | Texto de métodos y resultados (ES/EN), tablas Word/CSV, predicciones fuera de muestra |
+| 6 · Interpretación | Importancia por permutación, **dependencia parcial + ICE**, curva de decisión, predicción en pacientes nuevos, **simplificación del modelo** (variables con caída del AUC > 0,01; evaluación anidada, variables forzadas, reajuste de todo) |
+| 7 · Reporte | Texto de métodos y resultados (ES/EN), tablas Word/CSV, predicciones fuera de muestra, **código Python (scikit-learn, sin figuras)** y **calculadora de riesgo descargable (HTML autónomo)** |
+
+Las notas junto a cada algoritmo orientan los hiperparámetros, y la sección de validación recomienda pliegues (V) y repeticiones según los datos. Complementa a EPI-PREDIC: aquí se comparan algoritmos; allí se desarrolla y valida el modelo de regresión.
 
 La imputación (mediana/moda), la estandarización y la elección de λ ocurren **dentro de cada pliegue** para evitar fugas de información.
 

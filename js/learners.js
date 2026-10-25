@@ -2,9 +2,9 @@
 // k vecinos, árbol CART, bosque aleatorio, boosting de gradiente y red neuronal de una capa.
 // Interfaz común:  fit(X, y, family, params, ctx) → modelo;  predict(modelo, X) → Float64Array
 //   X: arreglo de filas Float64Array (sin NaN); y: 0/1 (family = 'binary') o continuo (family = 'continuous').
-import { fitGLM, fitOLS } from './models.js?v=2026.10.22-1';
-import { enet, cvEnet, standardize } from './glmnet.js?v=2026.10.22-1';
-import { rng } from './dist.js?v=2026.10.22-1';
+import { fitGLM, fitOLS } from './models.js?v=2026.10.25-1';
+import { enet, cvEnet, standardize } from './glmnet.js?v=2026.10.25-1';
+import { rng } from './dist.js?v=2026.10.25-1';
 
 const sum = a => { let s = 0; for (const v of a) s += v; return s; };
 const expit = e => 1 / (1 + Math.exp(-e));
@@ -158,10 +158,11 @@ export function libraryLabel(c) { const d = LEARNERS[c.learner].params; const di
 export function fitImputer(X) {
   const p = X[0].length, med = new Float64Array(p);
   for (let j = 0; j < p; j++) { const v = []; for (const x of X) if (!Number.isNaN(x[j])) v.push(x[j]); v.sort((a, b) => a - b); med[j] = v.length ? v[Math.floor(v.length / 2)] : 0; }
-  return X2 => X2.map(x => { let bad = false; for (let j = 0; j < p; j++) if (Number.isNaN(x[j])) { bad = true; break; } if (!bad) return x; const r = Float64Array.from(x); for (let j = 0; j < p; j++) if (Number.isNaN(r[j])) r[j] = med[j]; return r; });
+  const f = X2 => X2.map(x => { let bad = false; for (let j = 0; j < p; j++) if (Number.isNaN(x[j])) { bad = true; break; } if (!bad) return x; const r = Float64Array.from(x); for (let j = 0; j < p; j++) if (Number.isNaN(r[j])) r[j] = med[j]; return r; });
+  f.med = med; return f; // la mediana se expone para exportar el modelo
 }
 export function fitPipeline(c, X, y, fam, ctx) {
-  const L = LEARNERS[c.learner], hasNA = X.some(x => x.some(Number.isNaN)), imp = hasNA ? fitImputer(X) : null, Xi = imp ? imp(X) : X;
+  const L = LEARNERS[c.learner], imp = fitImputer(X), Xi = imp(X); // siempre se ajusta: un dato perdido solo en el pliegue de prueba también se imputa
   return { model: L.fit(Xi, y, fam, c.params, ctx), L, imp };
 }
 export const predictPipeline = (pl, X) => pl.L.predict(pl.model, pl.imp ? pl.imp(X) : X);

@@ -4,6 +4,10 @@ import { LEARNERS, defaultLibrary } from '../js/learners.js';
 import { nnls, superLearner, cvSuperLearner, cvPredict, aucOf, risk, simplexLogLik, permutationImportance, partialDependence, makeFolds } from '../js/sl.js';
 import { enet } from '../js/glmnet.js';
 import { rng } from '../js/dist.js';
+import { adviseLearners, adviseCV, rileyBinary } from '../js/advice.js';
+import { simplify } from '../js/simplify.js';
+import { serializeModel, calcPredict, calcHTML } from '../js/calc.js';
+import { pythonScript } from '../js/pycode.js';
 
 const R = f => JSON.parse(readFileSync(new URL(f, import.meta.url)));
 const ref = R('reference.json'), g = R('reference_glmnet.json');
@@ -40,5 +44,29 @@ const imp = permutationImportance(sl.predict, Xt, ybt, 'binary', Array.from({ le
 const pd = partialDependence(sl.predict, Xt, { name: 'x0', cols: [0], kind: 'num' }); ok('dependencia parcial: creciente en x0', pd.pd[pd.pd.length - 1] > pd.pd[0] + 0.15);
 // pliegues estratificados
 const fo = makeFolds(yb, 5, { seed: 1 }); const cnt = Array.from({ length: 5 }, (_, v) => { let e = 0, n = 0; yb.forEach((y, i) => { if (fo[i] === v) { n++; e += y; } }); return e / n; }); ok('pliegues estratificados: prevalencia similar', Math.max(...cnt) - Math.min(...cnt) < 0.03);
+
+// ---- orientación según n y eventos
+{ const few = adviseLearners({ n: 300, events: 40, p: 12, fam: 'binary' }), many = adviseLearners({ n: 8000, events: 2500, p: 20, fam: 'binary' });
+  ok('asesor: con 40 eventos y 12 columnas la regresión simple y los algoritmos flexibles no son recomendables, la penalizada sí', few.glm.st === 'avoid' && few.rf.st === 'avoid' && few.nnet.st === 'avoid' && few.enet.st !== 'avoid');
+  ok('asesor: con 2500 eventos todo es razonable', ['glm', 'enet', 'rf', 'gbm', 'nnet'].every(k => many[k].st === 'ok'));
+  const rl = rileyBinary({ cstat: 0.75, prev: 0.2, p: 10 }); ok('Riley: n mínimo = 661 (igual a pmsampsize y EPI-PREDIC)', rl.n === 661, rl.n);
+  ok('V recomendado: 5 con pocos eventos y 10 con muchos', adviseCV({ n: 200, events: 40, fam: 'binary' }).V === 5 && adviseCV({ n: 5000, events: 1500, fam: 'binary' }).V === 10); }
+// ---- simplificación por permutación, calculadora y código Python (datos simulados: solo x0 y x1 predicen)
+{ const r0 = rng(7), n = 500, p = 6, Xs = Array.from({ length: n }, () => Float64Array.from({ length: p }, () => r0.norm())), ys = Float64Array.from(Xs, x => (r0.u() < 1 / (1 + Math.exp(-(-0.3 + 1.3 * x[0] + 1 * x[1]))) ? 1 : 0));
+  Xs[5][2] = NaN; // un dato perdido que solo aparece en un pliegue de prueba también se imputa
+  const lb = defaultLibrary(['mean', 'glm', 'enet']), groups = Array.from({ length: p }, (_, j) => ({ name: 'x' + j, cols: [j] }));
+  const sm = await simplify({ X: Xs, y: ys, fam: 'binary', lib: lb, groups, thr: 0.01, R: 5, Vsel: 3, Vcv: 3, nested: true, Vo: 3, seed: 1 });
+  ok('simplificación: conserva x0 y x1 y descarta el ruido', sm.kept.length === 2 && sm.kept.includes('x0') && sm.kept.includes('x1'), sm.kept);
+  ok('simplificación anidada: el AUC honesto del modelo reducido no es peor (±0.02) que el completo', sm.honest.reduced.auc > sm.honest.full.auc - 0.02, [sm.honest.full.auc, sm.honest.reduced.auc]);
+  const forced = await simplify({ X: Xs, y: ys, fam: 'binary', lib: lb, groups, thr: 0.01, R: 3, Vsel: 3, Vcv: 3, nested: false, force: ['x4'], seed: 1 }); ok('simplificación: variable forzada se conserva', forced.kept.includes('x4'));
+  const lib2 = defaultLibrary(['mean', 'glm', 'enet', 'tree', 'rf', 'gbm', 'nnet']); lib2[4].params.ntree = 40; lib2[5].params.nrounds = 40; lib2[6].params.epochs = 60;
+  const sl2 = await superLearner(lib2, Xs, ys, 'binary', { V: 4, seed: 3 }); sl2.weights = Float64Array.from(sl2.weights, () => 1 / lib2.length); // todos los algoritmos con peso para exportarlos
+  const M = JSON.parse(JSON.stringify(serializeModel(sl2, lib2.map(l => l.label), Xs))), pe = sl2.predictEach(Xs.slice(0, 30)), refp = Float64Array.from({ length: 30 }, (_, i) => pe.reduce((a, z) => a + z[i], 0) / pe.length); let dmax = 0; Xs.slice(0, 30).forEach((x, i) => (dmax = Math.max(dmax, Math.abs(calcPredict(M, x).ens - refp[i]))));
+  ok(`calculadora: reproduce el Super Learner con los 7 algoritmos (dif. máx. ${dmax.toExponential(1)})`, dmax < 1e-4, dmax);
+  const knn = defaultLibrary(['glm', 'knn']), slk = await superLearner(knn, Xs, ys, 'binary', { V: 3, seed: 1 }); slk.weights = Float64Array.of(0.5, 0.5); let msg = ''; try { serializeModel(slk, ['a', 'b'], Xs); } catch (e) { msg = e.message; } ok('calculadora: k vecinos no se exporta (guarda datos de pacientes)', /no se puede exportar/.test(msg));
+  const html = calcHTML(M, { title: 't', outcome: 'y', event: 'Sí', fam: 'binary', groups: groups.map(g => ({ ...g, kind: 'num', min: -3, max: 3 })), ncols: p, n, events: 100, auc: '0.80', date: '2026-01-01' });
+  ok('calculadora HTML autónoma: modelo incluido, sin URL externa ni GitHub', html.includes('id="model"') && !/https?:\/\//.test(html.replace(/xmlns[^>]*/g, '')) && !/github/i.test(html));
+  const py = pythonScript({ data_file: 'd.csv', na_values: ['NA'], outcome: 'y', family: 'binary', event: 'Sí', predictors: [{ name: 'x0', type: 'num' }], library: [{ learner: 'glm', label: 'GLM', params: {} }], scheme: { type: 'cv', V: 5, repeats: 1, test_frac: 0.25 }, method: 'nnls', seed: 1, nested: { on: false, Vo: 5, Vi: 5 }, selection: { run: false, thr: 0.01, R: 5, Vsel: 3, Vcv: 5, force: [], selected: null }, meta: { n: 500, events: 200, date: '2026-01-01' } });
+  ok('código Python: sin figuras (matplotlib/plt) y sin GitHub', !/matplotlib|plt\.|github/i.test(py) && py.includes('SuperLearner') && py.includes('grouped_permutation_importance')); }
 function sum(a) { let s = 0; for (const v of a) s += v; return s; }
 console.log(`\n${checks - fails}/${checks} comprobaciones correctas`); process.exit(fails ? 1 : 0);

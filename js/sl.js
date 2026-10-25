@@ -1,8 +1,8 @@
 // Validación cruzada, métricas, Super Learner (van der Laan, Polley y Hubbard, 2007), Super Learner con validación cruzada anidada,
 // importancia por permutación y dependencia parcial.
-import { fitPipeline, predictPipeline, libraryLabel } from './learners.js?v=2026.10.22-1';
-import { rng } from './dist.js?v=2026.10.22-1';
-import { symInv, mv } from './linalg.js?v=2026.10.22-1';
+import { fitPipeline, predictPipeline, libraryLabel } from './learners.js?v=2026.10.25-1';
+import { rng } from './dist.js?v=2026.10.25-1';
+import { symInv, mv } from './linalg.js?v=2026.10.25-1';
 
 export const tick = () => new Promise(r => setTimeout(r, 0));
 const sum = a => { let s = 0; for (const v of a) s += v; return s; };
@@ -93,7 +93,7 @@ export async function superLearner(lib, X, y, fam, { V = 10, seed = 1, method = 
   const fits = []; for (let k = 0; k < K; k++) { fits.push(fitPipeline(lib[k], X, y, fam, { seed: seed + 100 + k })); onProgress?.({ stage: 'Ajuste final de cada algoritmo', done: k + 1, total: K }); await tick(); }
   const predictEach = Xn => fits.map(f => predictPipeline(f, Xn));
   const predict = Xn => { const P = predictEach(Xn), o = new Float64Array(Xn.length); for (let k = 0; k < K; k++) if (w[k] > 0) for (let i = 0; i < o.length; i++) o[i] += w[k] * P[k][i]; return o; };
-  return { lib, fam, Z, fold: c.fold, cvRisk, weights: w, discrete, ensCV: ens, ensRisk: risk(ens, y), predict, predictEach, time: c.time, method };
+  return { lib, fam, Z, fold: c.fold, cvRisk, weights: w, discrete, ensCV: ens, ensRisk: risk(ens, y), predict, predictEach, time: c.time, method, fits };
 }
 
 // Super Learner con validación cruzada externa: estima honestamente el rendimiento del conjunto (y del «discreto») y compara con cada algoritmo

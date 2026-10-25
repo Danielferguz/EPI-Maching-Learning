@@ -1,6 +1,6 @@
 // Gráficos del módulo de aprendizaje automático (SVG): comparación de algoritmos, ROC superpuestas, pesos, importancia, dependencia parcial y laboratorio de sobreajuste.
-import { frame, path, esc, PAL, BLUE, RED, GREY, STYLE } from './pplots.js?v=2026.10.22-1';
-export { calibrationPlot, scatterCalib, rocPlot, rocPoints, dcaPlot } from './pplots.js?v=2026.10.22-1';
+import { frame, path, esc, PAL, BLUE, RED, GREY, STYLE } from './pplots.js?v=2026.10.25-1';
+export { calibrationPlot, scatterCalib, rocPlot, rocPoints, dcaPlot } from './pplots.js?v=2026.10.25-1';
 
 const svgOpen = (W, H) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" class="plot" role="img">${STYLE}`;
 // barras horizontales con etiquetas; rows: [{label, value, lo?, hi?, color?, note?}]

@@ -7,7 +7,7 @@
 <meta name="description" content="EPI-Maching-Learning (EPI-LAB): análisis de predicción con aprendizaje automático en el navegador. Regresión penalizada, árboles, bosques aleatorios, boosting, redes neuronales y Super Learner con validación cruzada, importancia de variables y dependencia parcial.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/style.css?v=2026.10.22-1">
+<link rel="stylesheet" href="css/style.css?v=2026.10.25-1">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 </head>
 <body>
@@ -48,6 +48,7 @@
     <div class="form"><label>Desenlace <select id="q-y"></select></label><label id="q-ev-w">Categoría que es el evento <select id="q-ev"></select></label><label>Tipo de problema <input id="q-fam" readonly></label></div>
     <h3>Predictores</h3><div id="q-vars" class="predvars"></div><div class="row gap wrap mt"><button class="ghost sm" id="q-all">Marcar todos</button><button class="ghost sm" id="q-none">Ninguno</button><span id="q-info" class="sub"></span></div>
     <div id="q-warn"></div>
+    <div class="explain" id="q-adv-wrap" hidden><h3>¿Qué modelos son razonables con estos datos?</h3><p class="sub">Según los pacientes, los eventos y las columnas de predictores. El tamaño mínimo para regresión sigue los criterios de Riley et al. (2019, 2020); los semáforos de los demás algoritmos son reglas prácticas conservadoras.</p><label class="inline">AUC esperado del modelo <input id="q-cexp" type="number" step="0.01" min="0.55" max="0.99" value="0.75" style="width:80px"></label><div id="q-advice"></div></div>
     <div class="stepnav"><button class="ghost" data-go="datos">← Datos</button><button class="primary" data-go="algoritmos">Siguiente: algoritmos →</button></div>
   </div>
 </section>
@@ -63,7 +64,8 @@
   <div class="card has-data" hidden>
     <h2>Esquema de validación</h2>
     <div class="howto"><div><b>Validación cruzada</b>Los datos se dividen en V pliegues; cada pliegue se predice con modelos entrenados con los demás. Todas las observaciones se usan para entrenar y para evaluar, sin que un paciente se prediga con un modelo que lo vio.</div><div><b>Hold-out</b>Se reserva una fracción como conjunto de prueba, que se toca una sola vez al final. Es menos eficiente, pero da una evaluación independiente del conjunto completo.</div><div><b>Super Learner anidado</b>Evaluar el Super Learner con las mismas predicciones que eligieron sus pesos es optimista; la validación cruzada anidada da el rendimiento honesto (tarda ~V veces más).</div></div>
-    <div class="form"><label>Esquema <select id="v-type"><option value="cv">Validación cruzada V pliegues</option><option value="holdout">Entrenamiento / prueba (hold-out)</option></select></label><label>Pliegues (V) <input id="v-V" type="number" min="3" max="20" value="5"></label><label class="cvonly">Repeticiones de la validación cruzada <input id="v-rep" type="number" min="1" max="10" value="1"></label><label class="hoonly">Fracción de prueba <input id="v-test" type="number" step="0.05" min="0.1" max="0.5" value="0.25"></label><label>Pesos del Super Learner <select id="v-method"><option value="nnls">Mínimos cuadrados no negativos (NNLS)</option><option value="loglik" class="binonly">Log-verosimilitud binomial (solo binario)</option></select></label><label>Semilla <input id="v-seed" type="number" value="2024"></label><label class="inline wide"><input type="checkbox" id="v-cvsl" checked> Evaluar el Super Learner con validación cruzada anidada (rendimiento honesto)</label><label class="cvonly">Pliegues externos / internos <span class="row gap"><input id="v-vo" type="number" min="3" max="10" value="5" style="width:70px"><input id="v-vi" type="number" min="3" max="10" value="5" style="width:70px"></span></label></div>
+    <div class="form"><label>Esquema <select id="v-type"><option value="cv">Validación cruzada V pliegues</option><option value="holdout">Entrenamiento / prueba (hold-out)</option></select></label><label>Pliegues (V) <input id="v-V" type="number" min="3" max="20" value="5"><small class="sub">Recomendado 5–10 (5 con pocos eventos)</small></label><label class="cvonly">Repeticiones de la validación cruzada <input id="v-rep" type="number" min="1" max="10" value="1"><small class="sub">Recomendado 3–10; más repeticiones si hay pocos eventos</small></label><label class="hoonly">Fracción de prueba <input id="v-test" type="number" step="0.05" min="0.1" max="0.5" value="0.25"></label><label>Pesos del Super Learner <select id="v-method"><option value="nnls">Mínimos cuadrados no negativos (NNLS)</option><option value="loglik" class="binonly">Log-verosimilitud binomial (solo binario)</option></select></label><label>Semilla <input id="v-seed" type="number" value="2024"></label><label class="inline wide"><input type="checkbox" id="v-cvsl" checked> Evaluar el Super Learner con validación cruzada anidada (rendimiento honesto)</label><label class="cvonly">Pliegues externos / internos <span class="row gap"><input id="v-vo" type="number" min="3" max="10" value="5" style="width:70px"><input id="v-vi" type="number" min="3" max="10" value="5" style="width:70px"></span></label></div>
+    <div id="v-notes" class="explain"></div>
     <div id="v-est" class="explain"></div>
     <div class="row gap mt wrap"><button class="primary" id="run">Entrenar y comparar</button><progress id="prog" max="1" value="0" hidden></progress><span id="run-msg" class="muted"></span></div>
   </div>
@@ -75,7 +77,7 @@
   <div class="card"><h2>Formato de figuras</h2><p class="sub">Se aplica a las descargas SVG/PNG/TIFF.</p><div class="form"><label>Ancho <select id="fig-width"><option value="single">1 columna (85 mm)</option><option value="onehalf">1,5 columnas (120 mm)</option><option value="double" selected>2 columnas (174 mm)</option><option value="custom">Personalizado</option></select></label><label>Ancho personalizado (mm) <input id="fig-mm" type="number" value="174"></label><label>Resolución <select id="fig-dpi"><option>300</option><option selected>600</option><option>1200</option></select></label><label>Fuente <select id="fig-font"><option value="arial">Arial</option><option value="helvetica">Helvetica</option><option value="times">Times New Roman</option></select></label></div></div></section>
 <section id="tab-ayuda" class="tab"><div class="card prose" id="help"></div></section>
 </main>
-<footer class="foot">EPI-Maching-Learning · un módulo de EPI-LAB · © Daniel Fernández-Guzmán · CC BY-NC-ND 4.0 · Los cálculos se realizan en su navegador; ningún dato se envía a servidores. · v2026.10.22-1</footer>
-<script type="module" src="js/app.js?v=2026.10.22-1"></script>
+<footer class="foot">EPI-Maching-Learning · un módulo de EPI-LAB · © Daniel Fernández-Guzmán · CC BY-NC-ND 4.0 · Los cálculos se realizan en su navegador; ningún dato se envía a servidores. · v2026.10.25-1</footer>
+<script type="module" src="js/app.js?v=2026.10.25-1"></script>
 </body>
 </html>
