@@ -1,7 +1,7 @@
 // Validación externa de un modelo ya entrenado (sin reajustarlo) y su recalibración (Binuya et al. 2022):
 // calibración en general (CITL), pendiente de calibración y comparación honesta de estrategias de recalibración por validación cruzada.
-import { metrics } from './sl.js?v=2026.10.25-5';
-import { fitGLM, fitOLS } from './models.js?v=2026.10.25-5';
+import { metrics } from './sl.js?v=2026.10.25-6';
+import { fitGLM, fitOLS } from './models.js?v=2026.10.25-6';
 
 const clamp = p => Math.min(1 - 1e-9, Math.max(1e-9, p)), logit = p => Math.log(clamp(p) / (1 - clamp(p))), expit = z => 1 / (1 + Math.exp(-z));
 const sum = a => a.reduce((s, v) => s + v, 0), mean = a => sum(a) / a.length;

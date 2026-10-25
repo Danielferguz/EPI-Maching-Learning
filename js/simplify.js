@@ -1,7 +1,7 @@
 // Simplificación del modelo por importancia por permutación: se conservan las variables cuya permutación reduce el AUC en más de `thr`
 // (en regresión, `thr` × DE del desenlace de aumento del RMSE). La importancia se mide en pliegues de PRUEBA (el Super Learner se ajusta
 // sin ellos) y se promedia; la evaluación anidada repite todo el proceso de selección dentro de cada pliegue externo (sin optimismo).
-import { makeFolds, superLearner, permutationImportance, metrics } from './sl.js?v=2026.10.25-5';
+import { makeFolds, superLearner, permutationImportance, metrics } from './sl.js?v=2026.10.25-6';
 
 const sum = a => { let s = 0; for (const v of a) s += v; return s; }, mean = a => (a.length ? sum(a) / a.length : NaN);
 const sdOf = a => (a.length > 1 ? Math.sqrt(sum(a.map(v => (v - mean(a)) ** 2)) / (a.length - 1)) : 0);

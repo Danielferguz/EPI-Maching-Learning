@@ -1,5 +1,5 @@
 // Utilidades de evaluación de predicciones (calibración, curva de decisión).
-import { fitGLM } from './models.js?v=2026.10.25-5';
+import { fitGLM } from './models.js?v=2026.10.25-6';
 export const wilson = (k, n, z = 1.96) => { const p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)); return [(c - h) / d, (c + h) / d]; };
 export function calibGroups(p, y, g = 10) { const idx = Array.from(p.keys()).sort((a, b) => p[a] - p[b]), n = idx.length, rows = []; for (let k = 0; k < g; k++) { const s = idx.slice(Math.floor(k * n / g), Math.floor((k + 1) * n / g)); if (!s.length) continue; const ev = s.reduce((a, i) => a + y[i], 0), [lo, hi] = wilson(ev, s.length); rows.push({ pred: s.reduce((a, i) => a + p[i], 0) / s.length, obs: ev / s.length, lo, hi, n: s.length }); } return rows; }
 export function lowess(x, y, f = 2 / 3, npts = 60) {

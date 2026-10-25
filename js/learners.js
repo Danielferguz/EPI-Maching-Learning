@@ -2,9 +2,9 @@
 // k vecinos, árbol CART, bosque aleatorio, boosting de gradiente y red neuronal de una capa.
 // Interfaz común:  fit(X, y, family, params, ctx) → modelo;  predict(modelo, X) → Float64Array
 //   X: arreglo de filas Float64Array (sin NaN); y: 0/1 (family = 'binary') o continuo (family = 'continuous').
-import { fitGLM, fitOLS } from './models.js?v=2026.10.25-5';
-import { enet, cvEnet, standardize } from './glmnet.js?v=2026.10.25-5';
-import { rng } from './dist.js?v=2026.10.25-5';
+import { fitGLM, fitOLS } from './models.js?v=2026.10.25-6';
+import { enet, cvEnet, standardize } from './glmnet.js?v=2026.10.25-6';
+import { rng } from './dist.js?v=2026.10.25-6';
 
 const sum = a => { let s = 0; for (const v of a) s += v; return s; };
 const expit = e => 1 / (1 + Math.exp(-e));

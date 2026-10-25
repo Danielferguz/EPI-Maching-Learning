@@ -1,23 +1,24 @@
 // EPI-Maching-Learning · interfaz: datos, pregunta, algoritmos y validación, resultados, interpretación y reporte.
-import { readFile, download, toCSV } from './io.js?v=2026.10.25-5';
-import { inferMeta, typedData, NA_DEFAULT, missCount, levelsOf, isMiss } from './data.js?v=2026.10.25-5';
-import { mean, sd } from './tests.js?v=2026.10.25-5';
-import { LEARNERS, defaultLibrary, libraryLabel, libraryLabelEn } from './learners.js?v=2026.10.25-5';
-import { call } from './runner.js?v=2026.10.25-5';
-import { hbarPlot, rocMulti, calibrationPlot, scatterCalib, dcaPlot, pdpPlot } from './mlplots.js?v=2026.10.25-5';
-import { calibGroups, lowess, calibSlope, dcaBinary, rocPts } from './evalutil.js?v=2026.10.25-5';
-import { figWrap, bindFigs } from './figs.js?v=2026.10.25-5';
-import { wordDoc, matrixHTML, matrixCSV, table1, table1HTML } from './report.js?v=2026.10.25-5';
-import { groupColumn, crudeAdjusted, uniAdjTable } from './analysis.js?v=2026.10.25-5';
-import { CONCEPTS_HTML, initLab } from './concepts.js?v=2026.10.25-5';
-import { HELP_HTML } from './help.js?v=2026.10.25-5';
-import { initRoadmap, initStageBar } from './roadmap.js?v=2026.10.25-5';
-import { calibration, fitRecal, applyRecal, cvRecal, pickRecal } from './extval.js?v=2026.10.25-5';
-import { metrics } from './sl.js?v=2026.10.25-5';
-import { adviseLearners, adviseCV, rileyBinary, ST, HPNOTE } from './advice.js?v=2026.10.25-5';
-import { pythonScript } from './pycode.js?v=2026.10.25-5';
-import { calcHTML, calcPredict } from './calc.js?v=2026.10.25-5';
-import { buildManuscript } from './manuscript.js?v=2026.10.25-5';
+import { readFile, download, toCSV } from './io.js?v=2026.10.25-6';
+import { inferMeta, typedData, NA_DEFAULT, missCount, levelsOf, isMiss } from './data.js?v=2026.10.25-6';
+import { mean, sd } from './tests.js?v=2026.10.25-6';
+import { LEARNERS, defaultLibrary, libraryLabel, libraryLabelEn } from './learners.js?v=2026.10.25-6';
+import { call } from './runner.js?v=2026.10.25-6';
+import { hbarPlot, rocMulti, calibrationPlot, scatterCalib, dcaPlot, pdpPlot } from './mlplots.js?v=2026.10.25-6';
+import { calibGroups, lowess, calibSlope, dcaBinary, rocPts } from './evalutil.js?v=2026.10.25-6';
+import { figWrap, bindFigs } from './figs.js?v=2026.10.25-6';
+import { wordDoc, matrixHTML, matrixCSV, table1, table1HTML } from './report.js?v=2026.10.25-6';
+import { groupColumn, crudeAdjusted, uniAdjTable } from './analysis.js?v=2026.10.25-6';
+import { CONCEPTS_HTML, initLab } from './concepts.js?v=2026.10.25-6';
+import { HELP_HTML } from './help.js?v=2026.10.25-6';
+import { practiceHTML, practiceHint, practiceFor } from './practice.js?v=2026.10.25-6';
+import { initRoadmap, initStageBar } from './roadmap.js?v=2026.10.25-6';
+import { calibration, fitRecal, applyRecal, cvRecal, pickRecal } from './extval.js?v=2026.10.25-6';
+import { metrics } from './sl.js?v=2026.10.25-6';
+import { adviseLearners, adviseCV, rileyBinary, ST, HPNOTE } from './advice.js?v=2026.10.25-6';
+import { pythonScript } from './pycode.js?v=2026.10.25-6';
+import { calcHTML, calcPredict } from './calc.js?v=2026.10.25-6';
+import { buildManuscript } from './manuscript.js?v=2026.10.25-6';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -225,18 +226,21 @@ const xv = { raw: null, name: '' };
 function renderXv() {
   const R = state.res; if (!R) { $('#xv-out').innerHTML = ''; return; } xv.raw = null;
   $('#xv-out').innerHTML = `<div class="card" id="xv-card"><h2>Validación externa y recalibración</h2><div class="howto"><div><b>Qué se hace</b>Se aplica el Super Learner ya entrenado (sin reajustarlo) a pacientes de otro centro, otro periodo u otra población, y se mide su discriminación y calibración.</div><div><b>Para qué</b>La validación cruzada solo corrige el sobreajuste; la externa muestra si el modelo se transporta. Si discrimina bien pero se calibra mal, se puede recalibrar (nivel de riesgo y/o escala) en lugar de rehacerlo.</div><div><b>Cómo interpretar</b>Pendiente &lt; 0.9: predicciones demasiado extremas (sobreajuste); intercepto (CITL) ≠ 0 o O/E ≠ 1: el riesgo medio no coincide. La recalibración se compara por validación cruzada dentro de la base de validación.</div></div>
-    <div class="drop slim"><input type="file" id="xv-file" accept=".csv,.txt,.tsv,.xlsx,.xls"><label for="xv-file"><b>Cargar la base de validación (CSV/Excel)</b> con las mismas columnas, o <a href="#" id="xv-ex">usar la validación simulada de ejemplo</a> (solo para el ejemplo «ERC · falla renal a 2 años»)</label></div>
+    <div class="drop slim"><input type="file" id="xv-file" accept=".csv,.txt,.tsv,.xlsx,.xls"><label for="xv-file"><b>Cargar la base de validación (CSV/Excel)</b> con las mismas columnas, o <a href="#" id="xv-ex">usar la base de práctica de este ejemplo</a></label></div><div id="xv-practice"></div>
     <p class="sub" id="xv-info"></p><div class="row gap wrap"><button class="primary" id="xv-run">Evaluar</button><span id="xv-msg" class="muted"></span></div><div id="xv-res"></div></div>`;
   const load = async file => { try { const { sheets } = await readFile(file), raw = sheets[Object.keys(sheets)[0]]; if (!raw.length) throw new Error('El archivo no tiene filas.'); xv.raw = raw; xv.name = file.name; $('#xv-info').innerHTML = `<span class="pill">✓ ${esc(file.name)}: ${raw.length} filas × ${Object.keys(raw[0]).length} columnas</span>`; } catch (e) { $('#xv-info').innerHTML = errBox(e); } };
   $('#xv-file').addEventListener('change', e => e.target.files[0] && load(e.target.files[0]));
-  $('#xv-ex').addEventListener('click', async e => { e.preventDefault(); try { await load(new File([await (await fetch('examples/erc_prediccion_validacion.csv')).text()], 'erc_prediccion_validacion.csv')); } catch (err) { $('#xv-info').innerHTML = errBox(err); } });
+  $('#xv-practice').innerHTML = practiceHTML(state.fname);
+  const loadPractice = async file => { try { await load(new File([await (await fetch('examples/' + file)).text()], file)); } catch (err) { $('#xv-info').innerHTML = errBox(err); } };
+  $('#xv-ex').addEventListener('click', e => { e.preventDefault(); const c = practiceFor(state.fname); if (c) loadPractice(c.file); else $('#xv-info').innerHTML = errBox('El ejemplo de desarrollo cargado no tiene base de práctica emparejada: elija una de la lista (tras cargar su ejemplo en el paso 2 y entrenar) o cargue su propia base.'); });
+  $('#xv-practice').addEventListener('click', e => { const b = e.target.closest('[data-practice]'); if (b) loadPractice(b.dataset.practice); });
   $('#xv-run').addEventListener('click', runXv);
 }
 async function runXv() {
   const msg = $('#xv-msg'), out = $('#xv-res'); out.innerHTML = ''; msg.textContent = 'Evaluando…';
   try {
     const R = state.res, fam = R.spec.fam, bin = fam === 'binary'; if (!xv.raw) throw new Error('Cargue primero la base de validación.');
-    const miss = [...R.spec.vars, R.spec.y].filter(v => !(v in xv.raw[0])); if (miss.length) throw new Error(`La base de validación no contiene: ${miss.join(', ')}.`);
+    const miss = [...R.spec.vars, R.spec.y].filter(v => !(v in xv.raw[0])); if (miss.length) throw new Error(`La base de validación no contiene: ${miss.join(', ')}.${practiceHint(state.fname)}`);
     const active = Object.fromEntries(Object.entries(state.meta).filter(([k, m]) => m.type !== 'skip' && k in xv.raw[0])), ds = typedData(xv.raw, active, naCodes()), b = buildMatrix(ds, state.meta, R.spec);
     if (b.y.length < 30) throw new Error('Muy pocos pacientes con desenlace en la base de validación.');
     if (bin && (b.y.reduce((a, c) => a + c, 0) < 5 || b.y.reduce((a, c) => a + c, 0) > b.y.length - 5)) throw new Error('Se necesitan al menos 5 pacientes con y 5 sin el evento.');
