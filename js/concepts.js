@@ -1,7 +1,7 @@
-import { fitOLS } from './models.js?v=2026.10.25-1';
-import { rng } from './dist.js?v=2026.10.25-1';
-import { labPlot } from './mlplots.js?v=2026.10.25-1';
-import { figWrap, bindFigs } from './figs.js?v=2026.10.25-1';
+import { fitOLS } from './models.js?v=2026.10.25-4';
+import { rng } from './dist.js?v=2026.10.25-4';
+import { labPlot } from './mlplots.js?v=2026.10.25-4';
+import { figWrap, bindFigs } from './figs.js?v=2026.10.25-4';
 
 export const CONCEPTS_HTML = `
 <div class="card prose">

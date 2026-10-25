@@ -2,9 +2,9 @@
 // k vecinos, árbol CART, bosque aleatorio, boosting de gradiente y red neuronal de una capa.
 // Interfaz común:  fit(X, y, family, params, ctx) → modelo;  predict(modelo, X) → Float64Array
 //   X: arreglo de filas Float64Array (sin NaN); y: 0/1 (family = 'binary') o continuo (family = 'continuous').
-import { fitGLM, fitOLS } from './models.js?v=2026.10.25-1';
-import { enet, cvEnet, standardize } from './glmnet.js?v=2026.10.25-1';
-import { rng } from './dist.js?v=2026.10.25-1';
+import { fitGLM, fitOLS } from './models.js?v=2026.10.25-4';
+import { enet, cvEnet, standardize } from './glmnet.js?v=2026.10.25-4';
+import { rng } from './dist.js?v=2026.10.25-4';
 
 const sum = a => { let s = 0; for (const v of a) s += v; return s; };
 const expit = e => 1 / (1 + Math.exp(-e));
@@ -152,6 +152,9 @@ export const LEARNERS = {
 
 // biblioteca: lista de {id, learner, params, label}
 export const defaultLibrary = (names = ['mean', 'glm', 'enet', 'rf', 'gbm']) => names.map(id => ({ id, learner: id, params: { ...LEARNERS[id].params }, label: LEARNERS[id].name }));
+// nombres en inglés para figuras y manuscritos
+export const EN_NAME = { mean: 'Mean (reference)', glm: 'Logistic / linear regression', enet: 'Penalised regression (elastic net)', knn: 'k-nearest neighbours', tree: 'Decision tree (CART)', rf: 'Random forest', gbm: 'Gradient boosting', nnet: 'Neural network (1 hidden layer)' };
+export function libraryLabelEn(c) { const d = LEARNERS[c.learner].params, diff = Object.keys(d).filter(k => c.params[k] !== d[k]).map(k => `${k}=${c.params[k]}`), base = c.label === LEARNERS[c.learner].name ? EN_NAME[c.learner] : String(c.label).replace('(variante)', '(variant)'); return base + (diff.length ? ` (${diff.join(', ')})` : ''); }
 export function libraryLabel(c) { const d = LEARNERS[c.learner].params; const diff = Object.keys(d).filter(k => c.params[k] !== d[k]).map(k => `${k}=${c.params[k]}`); return c.label + (diff.length ? ` (${diff.join(', ')})` : ''); }
 
 // imputación por la mediana del entrenamiento (se aplica dentro de cada pliegue para evitar fugas de información)

@@ -1,6 +1,6 @@
 // Orientación sobre qué algoritmos son razonables según el tamaño de muestra, los eventos y los predictores, y notas de hiperparámetros / validación.
 // Los umbrales son reglas prácticas conservadoras (van der Ploeg 2014; Riley 2019-2020; Steyerberg 2019): orientan, no sustituyen el juicio.
-import { qnorm, dnorm } from './dist.js?v=2026.10.25-1';
+import { qnorm, dnorm } from './dist.js?v=2026.10.25-4';
 
 const ln = Math.log, exp = Math.exp;
 // ---- criterios de tamaño de muestra de Riley et al. (desarrollo, desenlace binario; mismos cálculos que pmsampsize y EPI-PREDIC)

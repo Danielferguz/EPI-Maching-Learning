@@ -1,6 +1,6 @@
 // Gráficos del módulo de aprendizaje automático (SVG): comparación de algoritmos, ROC superpuestas, pesos, importancia, dependencia parcial y laboratorio de sobreajuste.
-import { frame, path, esc, PAL, BLUE, RED, GREY, STYLE } from './pplots.js?v=2026.10.25-1';
-export { calibrationPlot, scatterCalib, rocPlot, rocPoints, dcaPlot } from './pplots.js?v=2026.10.25-1';
+import { frame, path, esc, PAL, BLUE, RED, GREY, STYLE } from './pplots.js?v=2026.10.25-4';
+export { calibrationPlot, scatterCalib, rocPlot, rocPoints, dcaPlot } from './pplots.js?v=2026.10.25-4';
 
 const svgOpen = (W, H) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" class="plot" role="img">${STYLE}`;
 // barras horizontales con etiquetas; rows: [{label, value, lo?, hi?, color?, note?}]
@@ -18,22 +18,22 @@ export function hbarPlot(rows, { title = '', xlab = '', xmin = null, xmax = null
   if (ref != null) s += `<line x1="${sx(ref)}" x2="${sx(ref)}" y1="30" y2="${yb}" stroke="${GREY}" stroke-dasharray="4 3"/>`;
   s += `<text x="${(x0 + x1) / 2}" y="${H - 8}" text-anchor="middle">${esc(xlab)}</text>`; return s + '</svg>';
 }
-export function rocMulti(curves, title = 'Curvas ROC (predicciones de validación cruzada)') {
-  const F = frame({ W: 460, H: 420, xdom: [0, 1], ydom: [0, 1], xlab: '1 − Especificidad', ylab: 'Sensibilidad', title }); let s = F.s;
+export function rocMulti(curves, title = 'ROC curves (cross-validated predictions)') {
+  const F = frame({ W: 460, H: 420, xdom: [0, 1], ydom: [0, 1], xlab: '1 − Specificity', ylab: 'Sensitivity', title }); let s = F.s;
   s += `<line x1="${F.sx(0)}" y1="${F.sy(0)}" x2="${F.sx(1)}" y2="${F.sy(1)}" stroke="currentColor" stroke-dasharray="4 3"/>`;
   curves.forEach((c, k) => { const col = c.color || PAL[k % PAL.length]; s += `<path d="${path(c.pts, F.sx, F.sy)}" fill="none" stroke="${col}" stroke-width="${c.bold ? 3 : 1.5}"/><rect x="${F.sx(0.45)}" y="${F.sy(0.28) + k * 15}" width="9" height="9" fill="${col}"/><text x="${F.sx(0.45) + 14}" y="${F.sy(0.28) + 9 + k * 15}" class="s">${esc(c.label)}</text>`; });
   return s + '</svg>';
 }
 // dependencia parcial con curvas ICE; pd = {name, kind, x[], pd[], ice[][], levels?}
-export function pdpPlot(pd, { ylab = 'Predicción', title = null } = {}) {
+export function pdpPlot(pd, { ylab = 'Prediction', title = null } = {}) {
   const isNum = pd.kind === 'num', ys = [...pd.pd, ...pd.ice.flat()], lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.05 || 0.01;
   if (isNum) {
-    const F = frame({ W: 380, H: 300, xdom: [Math.min(...pd.x), Math.max(...pd.x)], ydom: [lo - pad, hi + pad], xlab: pd.name, ylab, title: title ?? `Dependencia parcial · ${pd.name}`, ml: 56 }); let s = F.s;
+    const F = frame({ W: 380, H: 300, xdom: [Math.min(...pd.x), Math.max(...pd.x)], ydom: [lo - pad, hi + pad], xlab: pd.name, ylab, title: title ?? `Partial dependence · ${pd.name}`, ml: 56 }); let s = F.s;
     pd.ice.forEach(l => (s += `<path d="${path(pd.x.map((x, i) => [x, l[i]]), F.sx, F.sy)}" fill="none" stroke="${GREY}" stroke-width=".7" opacity=".45"/>`));
     s += `<path d="${path(pd.x.map((x, i) => [x, pd.pd[i]]), F.sx, F.sy)}" fill="none" stroke="${RED}" stroke-width="2.6"/>`; return s + '</svg>';
   }
   const L = pd.levels, W = 380, H = 300, m = { l: 56, r: 12, t: 30, b: 70 }, bw = (W - m.l - m.r) / L.length, sy = v => H - m.b - (v - (lo - pad)) / (hi + pad - (lo - pad)) * (H - m.b - m.t);
-  let s = svgOpen(W, H) + `<text x="8" y="18" class="h">${esc(title ?? `Dependencia parcial · ${pd.name}`)}</text><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="none" stroke="currentColor" stroke-width=".7"/>`;
+  let s = svgOpen(W, H) + `<text x="8" y="18" class="h">${esc(title ?? `Partial dependence · ${pd.name}`)}</text><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="none" stroke="currentColor" stroke-width=".7"/>`;
   pd.pd.forEach((v, i) => { const x = m.l + i * bw + bw * 0.15; s += `<rect x="${x}" y="${sy(v)}" width="${bw * 0.7}" height="${H - m.b - sy(v)}" fill="${BLUE}" opacity=".85"/><text x="${x + bw * 0.35}" y="${H - m.b + 12}" class="s" transform="rotate(35 ${x + bw * 0.35} ${H - m.b + 12})">${esc(String(L[i]).slice(0, 16))}</text>`; });
   [lo, (lo + hi) / 2, hi].forEach(v => (s += `<text x="${m.l - 5}" y="${sy(v) + 4}" text-anchor="end" class="s">${(+v.toPrecision(3))}</text>`)); return s + '</svg>';
 }

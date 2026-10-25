@@ -14,7 +14,8 @@ Todo se calcula en el navegador (Web Worker): los datos no salen de tu computado
 | 4 · Algoritmos y validación | Biblioteca con hiperparámetros y variantes: media, regresión logística/lineal, **lasso/ridge/red elástica**, k vecinos, **árbol CART**, **bosque aleatorio**, **boosting de gradiente**, red neuronal; validación cruzada (repetida) u hold-out; pesos NNLS o log-verosimilitud |
 | 5 · Resultados | Tabla comparativa (AUC con IC, Brier, log-loss, O/E, RMSE, R²…), pesos del **Super Learner**, **Super Learner con validación cruzada anidada** (rendimiento honesto), ROC, calibración, observado vs predicho |
 | 6 · Interpretación | Importancia por permutación, **dependencia parcial + ICE**, curva de decisión, predicción en pacientes nuevos, **simplificación del modelo** (variables con caída del AUC > 0,01; evaluación anidada, variables forzadas, reajuste de todo) |
-| 7 · Reporte | Texto de métodos y resultados (ES/EN), tablas Word/CSV, predicciones fuera de muestra, **código Python (scikit-learn, sin figuras)** y **calculadora de riesgo descargable (HTML autónomo)** |
+| 3 · Pregunta (adicional) | **Tabla 1** (total y por desenlace, con p) y **regresión cruda/ajustada** por predictor, exportables |
+| 7 · Reporte | Texto de métodos y resultados (ES/EN), tablas Word/CSV, predicciones fuera de muestra, **código Python (scikit-learn, sin figuras)** y **calculadora de riesgo descargable (HTML autónomo)** y **borrador de manuscrito ES/EN** (tablas y figuras en inglés) |
 
 Las notas junto a cada algoritmo orientan los hiperparámetros, y la sección de validación recomienda pliegues (V) y repeticiones según los datos. Complementa a EPI-PREDIC: aquí se comparan algoritmos; allí se desarrolla y valida el modelo de regresión.
 

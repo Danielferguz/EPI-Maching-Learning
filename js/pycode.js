@@ -2,6 +2,7 @@
 const PY = String.raw`
 import json, sys, warnings
 import numpy as np, pandas as pd
+from scipy import stats
 from scipy.optimize import nnls, minimize
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.impute import SimpleImputer
@@ -172,11 +173,39 @@ def select_variables(lib, X, y, groups, thr, R, Vsel, Vcv, seed, method, force=(
     return imp, keep
 
 
+
+# ------------------------------------------------------------------ Tabla 1 y regresión cruda / ajustada (statsmodels, scipy)
+def table1(path, predictors):
+    df = pd.read_csv(path, na_values=CFG["na_values"]); df = df[df[CFG["outcome"]].notna()]
+    g = (df[CFG["outcome"]].astype(str) == str(CFG["event"])).map({True: "event", False: "no event"}) if BIN else pd.qcut(pd.to_numeric(df[CFG["outcome"]]), 3, labels=["T1", "T2", "T3"])
+    lv = list(pd.unique(g.dropna())); rows = []
+    for v in predictors:
+        x = df[v["name"]]
+        if v["type"] == "num":
+            x = pd.to_numeric(x, errors="coerce"); xs = [x[g == l].dropna() for l in lv]; q = lambda a: f"{a.median():.1f} ({a.quantile(.25):.1f}-{a.quantile(.75):.1f})"
+            p = stats.mannwhitneyu(xs[0], xs[1]).pvalue if len(lv) == 2 else stats.kruskal(*xs).pvalue; rows.append([f"{v['name']}, median (IQR)", q(x.dropna())] + [q(a) for a in xs] + [p])
+        else:
+            tab = pd.crosstab(x, g); p = stats.fisher_exact(tab.values)[1] if tab.shape == (2, 2) and (stats.contingency.expected_freq(tab.values) < 5).any() else stats.chi2_contingency(tab.values, correction=False)[1]
+            rows.append([f"{v['name']}, n (%)", ""] + [""] * len(lv) + [p])
+            for l in v["levels"]: rows.append([f"   {l}", f"{(x == l).sum()} ({100 * (x == l).mean():.1f})"] + [f"{((x == l) & (g == k)).sum()} ({100 * ((x == l) & (g == k)).sum() / (g == k).sum():.1f})" for k in lv] + [np.nan])
+    return pd.DataFrame(rows, columns=["variable", "total"] + [str(k) for k in lv] + ["p"])
+
+
+def crude_adjusted(X, y, names, groups):
+    import statsmodels.api as sm
+    ok = ~np.isnan(X).any(axis=1); X, y = X[ok], y[ok]; f = (lambda c: sm.Logit(y, sm.add_constant(c)).fit(disp=0)) if BIN else (lambda c: sm.OLS(y, sm.add_constant(c)).fit())
+    adj = f(X); ea = np.exp(adj.params[1:]) if BIN else adj.params[1:]; out = []
+    for j, nm in enumerate(names):
+        r = f(X[:, [j]]); e = np.exp(r.params[1]) if BIN else r.params[1]; out.append([nm, e, ea[j], r.pvalues[1], adj.pvalues[1 + j]])
+    return pd.DataFrame(out, columns=["variable", "crude", "adjusted", "crude_p", "adjusted_p"])
+
 # ------------------------------------------------------------------ flujo principal
 def main(data_path, new_path=None):
     preds = CFG["predictors"]; sel = CFG["selection"]
     X, y, names, groups = load_xy(data_path, preds); sch = CFG["scheme"]; lib = CFG["library"]; seed = CFG["seed"]; method = CFG["method"]
     print(f"{len(y)} pacientes, {X.shape[1]} columnas" + (f", {int(y.sum())} eventos" if BIN else ""))
+    try: table1(data_path, CFG["predictors"]).to_csv("tabla1.csv", index=False); crude_adjusted(X, y, names, groups).to_csv("regresion_cruda_ajustada.csv", index=False)
+    except Exception as e: print("Tabla 1 / regresión cruda y ajustada omitidas:", e)
     if sel["run"]:
         imp, keep = select_variables(lib, X, y, groups, sel["thr"], sel["R"], sel["Vsel"], sel["Vcv"], seed, method, sel["force"])
         col = "caida_AUC" if BIN else "aumento_RMSE"; pd.DataFrame({"variable": list(imp), col: list(imp.values()), "se_conserva": [k in keep for k in imp]}).sort_values(col, ascending=False).to_csv("importancia_permutacion.csv", index=False)
@@ -218,10 +247,10 @@ export function pythonScript(cfg) {
 Código de replicación · EPI-Maching-Learning (EPI-LAB)  —  generado el ${cfg.meta.date}
 Desenlace: ${cfg.outcome}${cfg.family === 'binary' ? ` (evento: ${cfg.event})` : ''} · ${cfg.meta.n} pacientes${cfg.meta.events != null ? `, ${cfg.meta.events} eventos` : ''} · ${cfg.predictors.length} predictores.
 
-Requisitos: Python >= 3.9, numpy, pandas, scipy, scikit-learn >= 1.2.  Uso:  python replicar.py datos.csv [nuevos_pacientes.csv]
+Requisitos: Python >= 3.9, numpy, pandas, scipy, statsmodels, scikit-learn >= 1.2.  Uso:  python replicar.py datos.csv [nuevos_pacientes.csv]
 
 Este script reproduce el flujo del análisis (preparación de datos, algoritmos, validación cruzada, Super Learner, importancia por permutación y
-predicción de pacientes nuevos) con scikit-learn y SciPy. NO incluye código de figuras. La aplicación calcula con una implementación propia en
+predicción de pacientes nuevos, Tabla 1 y regresión cruda/ajustada) con scikit-learn, SciPy y statsmodels. NO incluye código de figuras. La aplicación calcula con una implementación propia en
 JavaScript, verificada frente a scikit-learn y SciPy: árbol CART, boosting de gradiente, k vecinos y regresión penalizada (a λ fijo) coinciden con
 diferencias < 1e-9; el bosque aleatorio y la red neuronal son equivalentes pero no idénticos (otro generador aleatorio), y los pliegues y la rejilla de λ
 de la validación cruzada interna también difieren. Espere diferencias pequeñas en las métricas (p. ej., AUC ± 0,01), no valores idénticos.
