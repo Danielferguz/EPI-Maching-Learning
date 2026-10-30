@@ -50,7 +50,7 @@ export function calcHTML(M, info) {
     ? `<label>${E(g.name)}<input type="number" step="any" data-i="${i}" placeholder="${g.min != null ? `rango observado ${E(g.min)}–${E(g.max)}` : ''}"></label>`
     : `<label>${E(g.name)}<select data-i="${i}"><option value="">(desconocido)</option>${g.levels.map(l => `<option>${E(l)}</option>`).join('')}</select></label>`).join('');
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${E(info.title)}</title>
-<style>:root{--bg:#fff;--fg:#1f2933;--mu:#6b7785;--line:#d9dee4;--ac:#2E7F90;--card:#f6f8fa}@media(prefers-color-scheme:dark){:root{--bg:#14181d;--fg:#e6e9ec;--mu:#9aa5b1;--line:#2c333b;--card:#1b2026}}
+<style>:root{--bg:#fff;--fg:#1f2933;--mu:#6b7785;--line:#d9dee4;--ac:#2E7F90;--card:#f6f8fa}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}main{max-width:760px;margin:0 auto;padding:20px 16px 40px}h1{font-size:1.3rem;margin:.2em 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mu);gap:3px}input,select{font:inherit;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
